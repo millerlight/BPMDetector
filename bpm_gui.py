@@ -194,7 +194,7 @@ class BPMDetectorGUI:
     def _show_result(self, bpm):
         """Display the BPM result without popup"""
         self.progress_bar.stop()
-        self.bpm_var.set(f"{bpm} BPM")
+        self.bpm_var.set(f"{bpm:.2f} BPM")
         self.status_var.set("Analyse abgeschlossen")
         
     def _show_error(self, message):

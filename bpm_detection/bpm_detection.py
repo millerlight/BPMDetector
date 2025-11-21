@@ -165,8 +165,8 @@ def bpm_detector(data, fs, verbose=True):
     if len(data) < 1000:  # Ensure we have enough data
         return no_audio_data()
     
-    # Limit data size for performance (use first 30 seconds max)
-    max_samples = min(len(data), fs * 30)
+    # Use first 45 seconds for more accurate detection
+    max_samples = min(len(data), fs * 45)
     data = data[:max_samples]
     
     cA = []
@@ -236,14 +236,14 @@ def bpm_detector(data, fs, verbose=True):
     
     bpm = 60.0 / peak_ndx_adjusted * (fs / max_decimation)
     
-    # Handle octave/harmonic detection
-    if bpm < 70:
+    # Proper octave detection for accurate BPM
+    if bpm < 70:  # If very low, likely half tempo
         bpm *= 2
-    elif bpm > 180:
+    elif bpm > 180:  # If very high, likely double tempo
         bpm /= 2
     
     if verbose:
-        print(bpm)
+        print(f"{bpm:.2f}")
     
     return bpm, correl
 
@@ -310,5 +310,5 @@ if __name__ == "__main__":
         plt.plot(n, abs(correl))
         plt.show(block=True)
     else:
-        # Silent mode - output only rounded BPM
-        print(round(bpm))
+        # Silent mode - output 2 decimal places
+        print(f"{bpm:.2f}")
