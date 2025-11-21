@@ -1,0 +1,1 @@
+New-Item -ItemType Junction ` -Path "D:\___PYCHARMPROJECTS\the-BPM-detector-python\bpm-detector" ` -Target "D:\VS-output\bpm-detector"

@@ -1,0 +1,44 @@
+
+
+ich habe hier ein python projekt, das eine audiodatei analysiert und dazu die bpm (beats per minute) ermittelt.
+das pythonprojekt inclusive gui und pythonbuilder für eine exe ist voll funktionsfähig.
+an den python-dateien sollen keine veränderungen vorgenommen werden.
+
+der ordner bpm-detector ist virtuell verlinkt. er darf niemals automatisch gelöscht werden.
+er enthält das c# projekt
+dieses soll hier bearbeitet werden.
+ziel ist es, darin über vs 2022 eine native exe zu erstellen.
+
+dazu soll der python algorithmus auf c# portiert werden.
+
+die aktuell vorliegenden dateien unter bpm-detector sind nicht voll funktionsfähig und entalten bugs.
+sie können bei bedarf als vorlage benutzt werden.
+ich möchte aber ein voll funktionsfähige applikation.
+
+in der applikation soll es einen bereich gben, in dem kopierbar kurze messages angezeigt werden,
+was im betrieb der aplikation passiert.
+
+
+
+aktuell ist mir die information im debugging bereich zu umfangreich.
+ich möchte nur ein kurze info, welche datei geladen wurde, wie groß sie ist
+und bei erfolg, welche bpm zahl ermittelt wurde.
+bei fehlern möchte ich die ausgabe im debugging feld.
+
+aktuell gibt es eine fehlermeldung
+
+
+
+************** Ausnahmetext **************
+System.ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'chunkLength')
+   at System.Text.StringBuilder.ToString()
+   at BPMDetector.MainForm.<LogDebugMessage>b__16_0() in D:\VS-output\bpm-detector\bpm-detector\MainForm.cs:line 80
+   at System.Windows.Forms.Control.InvokeMarshaledCallbackDo(ThreadMethodEntry tme)
+   at System.Windows.Forms.Control.InvokeMarshaledCallbackHelper(Object obj)
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.ExecutionContext.Run(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Windows.Forms.Control.InvokeMarshaledCallback(ThreadMethodEntry tme)
+   at System.Windows.Forms.Control.InvokeMarshaledCallbacks()
+
