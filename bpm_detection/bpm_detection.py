@@ -122,7 +122,53 @@ def peak_detect(data):
     return peak_ndx
 
 
+def trim_initial_silence(data, fs, threshold_percent=0.01, min_silence_duration=0.1):
+    """
+    Trim initial silence from audio data
+    
+    Args:
+        data: Audio samples
+        fs: Sample rate
+        threshold_percent: Percentage of max amplitude to consider as silence
+        min_silence_duration: Minimum duration of silence to trim (seconds)
+    
+    Returns:
+        Trimmed audio data
+    """
+    if len(data) == 0:
+        return data
+    
+    # Calculate threshold based on max amplitude
+    max_amplitude = max(abs(max(data)), abs(min(data)))
+    if max_amplitude == 0:
+        return data
+    
+    threshold = max_amplitude * threshold_percent
+    
+    # Find first non-silent sample
+    min_samples = int(min_silence_duration * fs)
+    
+    for i in range(len(data)):
+        if abs(data[i]) > threshold:
+            # Ensure we don't trim too aggressively
+            start_idx = max(0, i - min_samples // 2)
+            return data[start_idx:]
+    
+    # If all data is silent, return original
+    return data
+
+
 def bpm_detector(data, fs, verbose=True):
+    # Trim initial silence to avoid BPM calculation issues
+    data = trim_initial_silence(data, fs)
+    
+    if len(data) < 1000:  # Ensure we have enough data
+        return no_audio_data()
+    
+    # Limit data size for performance (use first 30 seconds max)
+    max_samples = min(len(data), fs * 30)
+    data = data[:max_samples]
+    
     cA = []
     cD = []
     correl = []
@@ -137,8 +183,8 @@ def bpm_detector(data, fs, verbose=True):
         # 1) DWT
         if loop == 0:
             [cA, cD] = pywt.dwt(data, "db4")
-            cD_minlen = len(cD) / max_decimation + 1
-            cD_sum = numpy.zeros(math.floor(cD_minlen))
+            cD_minlen = int(len(cD) / max_decimation + 1)
+            cD_sum = numpy.zeros(cD_minlen)
         else:
             [cA, cD] = pywt.dwt(cA, "db4")
 
@@ -148,12 +194,14 @@ def bpm_detector(data, fs, verbose=True):
         # 4) Subtract out the mean.
 
         # 5) Decimate for reconstruction later.
-        cD = abs(cD[:: (2 ** (levels - loop - 1))])
+        decimation_factor = 2 ** (levels - loop - 1)
+        cD = abs(cD[::decimation_factor])
         cD = cD - numpy.mean(cD)
 
         # 6) Recombine the signal before ACF
-        #    Essentially, each level the detail coefs (i.e. the HPF values) are concatenated to the beginning of the array
-        cD_sum = cD[0 : math.floor(cD_minlen)] + cD_sum
+        # Ensure consistent array sizes
+        actual_len = min(len(cD), cD_minlen)
+        cD_sum[:actual_len] += cD[:actual_len]
 
     if [b for b in cA if b != 0.0] == []:
         return no_audio_data()
@@ -162,19 +210,37 @@ def bpm_detector(data, fs, verbose=True):
     cA = signal.lfilter([0.01], [1 - 0.99], cA)
     cA = abs(cA)
     cA = cA - numpy.mean(cA)
-    cD_sum = cA[0 : math.floor(cD_minlen)] + cD_sum
+    actual_len = min(len(cA), cD_minlen)
+    cD_sum[:actual_len] += cA[:actual_len]
 
-    # ACF
+    # ACF - use smaller correlation window for performance
     correl = numpy.correlate(cD_sum, cD_sum, "full")
-
-    midpoint = math.floor(len(correl) / 2)
-    correl_midpoint_tmp = correl[midpoint:]
-    peak_ndx = peak_detect(correl_midpoint_tmp[min_ndx:max_ndx])
-    if len(peak_ndx) > 1:
+    
+    # Limit correlation calculation for performance
+    correl = correl[len(correl)//2:]  # Only use second half
+    
+    # Find peaks in reasonable BPM range
+    min_lag = max(1, int(60.0 / 200 * (fs / max_decimation)))  # 200 BPM max
+    max_lag = min(len(correl), int(60.0 / 40 * (fs / max_decimation)))   # 40 BPM min
+    
+    if max_lag <= min_lag:
         return no_audio_data()
-
-    peak_ndx_adjusted = peak_ndx[0] + min_ndx
+    
+    # Find the peak in the correlation
+    peak_range = correl[min_lag:max_lag]
+    if len(peak_range) == 0:
+        return no_audio_data()
+    
+    peak_ndx = numpy.argmax(peak_range)
+    peak_ndx_adjusted = peak_ndx + min_lag
+    
     bpm = 60.0 / peak_ndx_adjusted * (fs / max_decimation)
+    
+    # Handle octave/harmonic detection
+    if bpm < 70:
+        bpm *= 2
+    elif bpm > 180:
+        bpm /= 2
     
     if verbose:
         print(bpm)
