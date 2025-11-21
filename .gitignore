@@ -438,4 +438,17 @@ MigrationBackup/
 *.pubxml.user
 
 # Virtual directory link
-bpm-detector/
+# bpm-detector/
+
+# Allow essential Visual Studio project files
+!*.csproj
+!*.sln
+!*.cs
+!*.ico
+!*.csproj.user
+!*.Designer.cs
+!*.settings
+!*.resx
+!*.config
+!Properties/
+!Properties/**
